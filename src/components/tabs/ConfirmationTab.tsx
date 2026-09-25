@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useTrip } from '../../context/TripContext';
 import { formatPrice } from '../../services/mcpClient';
 import { OriginGatewayInput } from '../common/OriginGatewayInput';
+import { McpStatusModal } from '../modals/McpStatusModal';
 import { 
   Plane, 
   MapPin, 
@@ -16,7 +17,9 @@ import {
   TrendingDown,
   Building,
   Navigation,
-  Edit2
+  Edit2,
+  Server,
+  Zap
 } from 'lucide-react';
 
 export const ConfirmationTab: React.FC = () => {
@@ -34,6 +37,7 @@ export const ConfirmationTab: React.FC = () => {
   } = useTrip();
 
   const [isEditingOrigin, setIsEditingOrigin] = useState(false);
+  const [isMcpModalOpen, setIsMcpModalOpen] = useState(false);
 
   if (!selectedDestination) {
     return (
@@ -153,10 +157,20 @@ export const ConfirmationTab: React.FC = () => {
           {/* Header Bar */}
           <div className="p-5 border-b border-slate-800/80 bg-slate-900/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
             <div className="flex-1 max-w-lg">
-              <h2 className="text-base font-bold text-white font-display flex items-center gap-2">
-                <Plane className="w-4 h-4 text-cyan-400" />
-                <span>Smithery AI MCP Live Flight Options</span>
-              </h2>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h2 className="text-base font-bold text-white font-display flex items-center gap-2">
+                  <Plane className="w-4 h-4 text-cyan-400" />
+                  <span>Live Flight Options (MCP Engine)</span>
+                </h2>
+                <button
+                  type="button"
+                  onClick={() => setIsMcpModalOpen(true)}
+                  className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-cyan-950/70 hover:bg-cyan-900/80 border border-cyan-500/40 text-[10px] font-mono text-cyan-300 transition-colors"
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  <span>Upstream: flights.flightpowers.com</span>
+                </button>
+              </div>
               {isEditingOrigin ? (
                 <div className="mt-2 flex items-center gap-2">
                   <div className="w-72">
@@ -315,6 +329,7 @@ export const ConfirmationTab: React.FC = () => {
           </div>
         </div>
       </div>
+      <McpStatusModal isOpen={isMcpModalOpen} onClose={() => setIsMcpModalOpen(false)} />
     </div>
   );
 };

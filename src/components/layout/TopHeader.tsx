@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useTrip } from '../../context/TripContext';
 import { PlanningTab, CurrencyCode } from '../../types/travel';
 import { formatPrice } from '../../services/mcpClient';
+import { McpStatusModal } from '../modals/McpStatusModal';
 import { 
   Compass, 
   Plane, 
@@ -9,7 +10,8 @@ import {
   CreditCard, 
   FileCheck, 
   RotateCcw,
-  Sparkles
+  Sparkles,
+  Server
 } from 'lucide-react';
 
 export const TopHeader: React.FC = () => {
@@ -22,6 +24,8 @@ export const TopHeader: React.FC = () => {
     budgetBreakdown,
     resetAll 
   } = useTrip();
+
+  const [isMcpModalOpen, setIsMcpModalOpen] = useState(false);
 
   const tabs: { id: PlanningTab; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
     { id: 'discovery', label: '1. Discovery', icon: Compass },
@@ -82,6 +86,17 @@ export const TopHeader: React.FC = () => {
 
       {/* Zone 3: Financial status readout & action controls */}
       <div className="flex items-center gap-3">
+        {/* MCP Live Status Pill */}
+        <button
+          onClick={() => setIsMcpModalOpen(true)}
+          title="Open Model Context Protocol Hub (VentureFlow + FlightPowers)"
+          className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 text-[11px] font-mono text-cyan-300 transition-colors shadow-sm"
+        >
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+          <Server className="w-3 h-3 text-cyan-400" />
+          <span>MCP Hub</span>
+        </button>
+
         {/* Currency Selector */}
         <div className="flex items-center gap-1.5 bg-slate-800/80 px-2 py-1 rounded border border-slate-700/60 text-xs">
           <label htmlFor="currency-select" className="text-slate-400 text-[11px] uppercase tracking-wider">
@@ -123,6 +138,8 @@ export const TopHeader: React.FC = () => {
           <RotateCcw className="w-3.5 h-3.5" />
         </button>
       </div>
+
+      <McpStatusModal isOpen={isMcpModalOpen} onClose={() => setIsMcpModalOpen(false)} />
     </header>
   );
 };

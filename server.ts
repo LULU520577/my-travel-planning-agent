@@ -12,6 +12,7 @@ import {
   ATTRACTION_TICKETS_DATA 
 } from './src/data/travelKnowledge.ts';
 import { CurrencyCode, DestinationProposal, FlightOption, ItineraryDay, ActivityItem } from './src/types/travel.ts';
+import { handleMcpGet, handleMcpPost } from './src/server/mcpEndpoint.ts';
 
 dotenv.config();
 
@@ -157,6 +158,11 @@ class SmitheryMcpServiceBridge {
 const mcpBridge = SmitheryMcpServiceBridge.getInstance();
 
 // API Endpoints
+
+// 0. Model Context Protocol (MCP) Standard Streamable HTTP / JSON-RPC 2.0 Endpoint
+// Upstream integration with FlightPowers Google Flights MCP (https://flights.flightpowers.com/mcp)
+app.get('/api/mcp', handleMcpGet);
+app.post('/api/mcp', handleMcpPost);
 
 // 1. Discover Destinations via Smithery AI MCP
 app.post('/api/mcp/discover', async (req, res) => {
@@ -433,4 +439,9 @@ async function startServer() {
   });
 }
 
-startServer();
+// Only start standalone HTTP listener when not in Vercel serverless environment
+if (process.env.VERCEL !== '1' && process.env.NODE_ENV !== 'test') {
+  startServer();
+}
+
+export default app;
