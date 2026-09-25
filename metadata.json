@@ -1,0 +1,6 @@
+{
+  "name": "VentureFlow - Non-Scrolling Travel Studio",
+  "description": "Interactive, fixed-viewport travel planning studio integrating live flight discovery, wet-weather contingency replanning, and booking management.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
