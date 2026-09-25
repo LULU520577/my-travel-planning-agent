@@ -13,6 +13,7 @@ import {
 } from './src/data/travelKnowledge.ts';
 import { CurrencyCode, DestinationProposal, FlightOption, ItineraryDay, ActivityItem } from './src/types/travel.ts';
 import { handleMcpGet, handleMcpPost } from './src/server/mcpEndpoint.ts';
+import { searchMoodTripHotels } from './src/services/moodtripClient.ts';
 
 dotenv.config();
 
@@ -374,6 +375,26 @@ app.get('/api/mcp/logistics', async (req, res) => {
       transitPasses,
       attractionTickets,
       mcpSource: 'Smithery AI Hospitality & Ticketing Registry MCP'
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 6b. Live Hotel Search via MoodTrip AI MCP (https://api.moodtrip.ai/api/mcp-http)
+app.get('/api/mcp/hotels', async (req, res) => {
+  try {
+    const city = (req.query.city as string) || 'Kyoto';
+    const query = (req.query.query as string) || undefined;
+    const limit = parseInt(req.query.limit as string, 10) || 4;
+
+    const result = await searchMoodTripHotels({ city, query, limit });
+    res.json({
+      success: true,
+      city,
+      hotels: result.hotels,
+      upstream: 'https://api.moodtrip.ai/api/mcp-http',
+      mcpService: 'MoodTrip AI Hotel MCP'
     });
   } catch (error: any) {
     res.status(500).json({ error: error.message });

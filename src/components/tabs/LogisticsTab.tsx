@@ -14,7 +14,11 @@ import {
   MapPin, 
   Trash2,
   Sparkles,
-  CreditCard
+  CreditCard,
+  Search,
+  ExternalLink,
+  Zap,
+  Loader2
 } from 'lucide-react';
 
 export const LogisticsTab: React.FC = () => {
@@ -34,6 +38,30 @@ export const LogisticsTab: React.FC = () => {
     type: 'flight' | 'hotel' | 'transit' | 'ticket';
     item: any;
   } | null>(null);
+
+  // MoodTrip AI Hotel MCP state
+  const [moodtripHotels, setMoodtripHotels] = useState<any[]>([]);
+  const [moodtripQuery, setMoodtripQuery] = useState('');
+  const [isSearchingMoodtrip, setIsSearchingMoodtrip] = useState(false);
+  const [hasSearchedMoodtrip, setHasSearchedMoodtrip] = useState(false);
+
+  const handleSearchMoodtrip = async (customQuery?: string) => {
+    if (!selectedDestination) return;
+    const query = customQuery !== undefined ? customQuery : moodtripQuery;
+    setIsSearchingMoodtrip(true);
+    try {
+      const res = await fetch(`/api/mcp/hotels?city=${encodeURIComponent(selectedDestination.city)}&query=${encodeURIComponent(query)}&limit=4`);
+      const data = await res.json();
+      if (data.success && data.hotels) {
+        setMoodtripHotels(data.hotels);
+      }
+    } catch (e) {
+      console.error('MoodTrip search error:', e);
+    } finally {
+      setIsSearchingMoodtrip(false);
+      setHasSearchedMoodtrip(true);
+    }
+  };
 
   if (!selectedDestination) {
     return (
@@ -139,6 +167,125 @@ export const LogisticsTab: React.FC = () => {
                     Recommended properties in {selectedDestination.city} for {preferences.durationDays - 1 || 4} nights.
                   </p>
                 </div>
+              </div>
+
+              {/* MoodTrip AI Hotel MCP Live Search Bar */}
+              <div className="rounded-lg border border-slate-800 bg-slate-900/60 p-4 space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
+                      <Zap className="w-3.5 h-3.5" />
+                    </div>
+                    <div>
+                      <span className="text-xs font-bold text-white">MoodTrip AI Live Hotel Search</span>
+                      <span className="text-[10px] text-slate-400 ml-2 font-mono">Upstream: api.moodtrip.ai/api/mcp-http</span>
+                    </div>
+                  </div>
+                  <span className="inline-flex items-center gap-1 text-[10px] font-mono text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-500/40">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    MCP Protocol Active
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <div className="relative flex-1">
+                    <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      value={moodtripQuery}
+                      onChange={(e) => setMoodtripQuery(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === 'Enter') handleSearchMoodtrip(); }}
+                      placeholder={`Describe your stay in ${selectedDestination.city} (e.g. "boutique ryokan with private garden onsen", "cliffside suite")...`}
+                      className="w-full bg-slate-950 border border-slate-800 rounded pl-8 pr-3 py-1.5 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500"
+                    />
+                  </div>
+                  <button
+                    onClick={() => handleSearchMoodtrip()}
+                    disabled={isSearchingMoodtrip}
+                    className="px-3.5 py-1.5 rounded bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-xs transition-colors flex items-center gap-1.5 shrink-0 disabled:opacity-50"
+                  >
+                    {isSearchingMoodtrip ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>Searching...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Search className="w-3.5 h-3.5" />
+                        <span>Search MoodTrip</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                {/* Quick prompt suggestions */}
+                <div className="flex items-center gap-1.5 flex-wrap text-[11px] text-slate-400">
+                  <span className="text-slate-500 text-[10px] uppercase font-mono">Suggested Vibe Prompts:</span>
+                  {[
+                    'Boutique stay with scenic views',
+                    'Historic Ryokan with Onsen',
+                    'Family suite with kids space',
+                    'Luxury retreat with fine dining'
+                  ].map((prompt, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => {
+                        setMoodtripQuery(prompt);
+                        handleSearchMoodtrip(prompt);
+                      }}
+                      className="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700/60 transition-colors"
+                    >
+                      {prompt}
+                    </button>
+                  ))}
+                </div>
+
+                {/* MoodTrip live search results */}
+                {moodtripHotels.length > 0 && (
+                  <div className="pt-2 border-t border-slate-800/80 space-y-2">
+                    <div className="text-[11px] font-mono text-indigo-300 font-semibold flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
+                      <span>MoodTrip AI Search Results ({moodtripHotels.length} live properties):</span>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                      {moodtripHotels.map((hotel, idx) => (
+                        <div key={idx} className="rounded-lg border border-indigo-900/60 bg-slate-950/80 p-3 flex flex-col justify-between space-y-2.5">
+                          <div className="space-y-2">
+                            {hotel.imageUrl && (
+                              <div className="h-28 rounded overflow-hidden bg-slate-900">
+                                <img
+                                  src={hotel.imageUrl}
+                                  alt={hotel.name}
+                                  className="w-full h-full object-cover"
+                                  onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }}
+                                />
+                              </div>
+                            )}
+                            <div className="flex items-center justify-between gap-1">
+                              <span className="text-[10px] font-mono font-medium text-emerald-400 bg-emerald-950/80 px-1.5 py-0.5 rounded border border-emerald-500/30">
+                                Relevance: {hotel.relevance || '98%'}
+                              </span>
+                              <span className="text-[10px] font-mono text-slate-400">
+                                {hotel.priceNote || 'Live Rate'}
+                              </span>
+                            </div>
+                            <h5 className="text-xs font-bold text-white line-clamp-1">{hotel.name}</h5>
+                          </div>
+
+                          <a
+                            href={hotel.bookingUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="w-full flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded bg-indigo-600/80 hover:bg-indigo-600 text-white font-medium text-[11px] transition-colors"
+                          >
+                            <span>View & Book on MoodTrip</span>
+                            <ExternalLink className="w-3 h-3" />
+                          </a>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

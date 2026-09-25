@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { DESTINATIONS_DATA, FLIGHTS_DATA, BASE_ITINERARIES, ACCOMMODATIONS_DATA, TRANSIT_PASSES_DATA, ATTRACTION_TICKETS_DATA } from '../data/travelKnowledge.ts';
 import { queryFlightPowersMcp } from '../services/flightpowersClient.ts';
+import { searchMoodTripHotels } from '../services/moodtripClient.ts';
 import { CurrencyCode } from '../types/travel.ts';
 
 const CURRENCY_RATES: Record<CurrencyCode, number> = {
@@ -95,6 +96,19 @@ export const MCP_TOOLS_MANIFEST = [
       },
       required: ['destinationId']
     }
+  },
+  {
+    name: 'search_hotels',
+    description: 'Real-time AI hotel search using natural language criteria, room styles, and amenities powered by MoodTrip AI MCP (https://api.moodtrip.ai/api/mcp-http).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        city: { type: 'string', description: 'City name (e.g., Kyoto, Interlaken, Amalfi, Reykjavik)' },
+        query: { type: 'string', description: 'Natural language hotel description (e.g., "boutique ryokan with private garden onsen", "cliffside infinity pool")' },
+        limit: { type: 'integer', description: 'Maximum number of hotels (default 4)' }
+      },
+      required: ['city']
+    }
   }
 ];
 
@@ -105,7 +119,7 @@ export async function handleMcpGet(req: Request, res: Response) {
     serverInfo: {
       name: 'ventureflow-travel-agent-mcp',
       version: '1.0.0',
-      description: 'VentureFlow Travel Studio MCP Server with live FlightPowers Google Flights Integration',
+      description: 'VentureFlow Travel Studio MCP Server with live FlightPowers Google Flights & MoodTrip Hotel Integrations',
       websiteUrl: 'https://my-travel-planning-agent.vercel.app'
     },
     transport: {
@@ -119,6 +133,12 @@ export async function handleMcpGet(req: Request, res: Response) {
         url: 'https://flights.flightpowers.com/mcp',
         status: 'connected',
         description: 'Real-time Google Flights fare search and live pricing'
+      },
+      {
+        name: 'moodtrip-hotel-mcp',
+        url: 'https://api.moodtrip.ai/api/mcp-http',
+        status: 'connected',
+        description: 'Real-time AI Hotel Search, room descriptions, reviews and booking links'
       }
     ],
     tools: MCP_TOOLS_MANIFEST,
@@ -300,6 +320,28 @@ export async function handleMcpPost(req: Request, res: Response) {
 
           return sendResponse({
             content: [{ type: 'text', text: JSON.stringify(output, null, 2) }]
+          });
+        }
+
+        if (toolName === 'search_hotels') {
+          const { city = 'Kyoto', query, limit = 4 } = args;
+          const result = await searchMoodTripHotels({
+            city,
+            query,
+            limit
+          });
+
+          return sendResponse({
+            content: [{
+              type: 'text',
+              text: JSON.stringify({
+                city,
+                success: result.success,
+                upstream: 'https://api.moodtrip.ai/api/mcp-http',
+                hotels: result.hotels,
+                note: result.note
+              }, null, 2)
+            }]
           });
         }
 

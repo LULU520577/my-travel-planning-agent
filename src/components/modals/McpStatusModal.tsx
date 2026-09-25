@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Server, CheckCircle2, Copy, ExternalLink, Zap, Terminal, Shield, Key, X } from 'lucide-react';
+import { Server, CheckCircle2, Copy, ExternalLink, Zap, Terminal, Shield, Key, X, Building } from 'lucide-react';
 
 interface McpStatusModalProps {
   isOpen: boolean;
@@ -16,7 +16,8 @@ export const McpStatusModal: React.FC<McpStatusModalProps> = ({ isOpen, onClose 
   if (!isOpen) return null;
 
   const mcpUrl = typeof window !== 'undefined' ? `${window.location.origin}/api/mcp` : 'https://my-travel-planning-agent.vercel.app/api/mcp';
-  const upstreamUrl = 'https://flights.flightpowers.com/mcp';
+  const upstreamFlightPowersUrl = 'https://flights.flightpowers.com/mcp';
+  const upstreamMoodTripUrl = 'https://api.moodtrip.ai/api/mcp-http';
 
   const handleCopyEndpoint = () => {
     navigator.clipboard.writeText(mcpUrl);
@@ -104,12 +105,12 @@ export const McpStatusModal: React.FC<McpStatusModalProps> = ({ isOpen, onClose 
             </p>
           </div>
 
-          {/* Upstream MCP Server: FlightPowers */}
+          {/* Upstream MCP Server 1: FlightPowers */}
           <div className="rounded-lg border border-slate-800 bg-slate-950/60 p-3.5 space-y-2.5">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Zap className="w-4 h-4 text-amber-400" />
-                <span className="font-semibold text-white">Upstream: FlightPowers Google Flights MCP</span>
+                <span className="font-semibold text-white">Upstream 1: FlightPowers Google Flights MCP</span>
               </div>
               <span className="inline-flex items-center gap-1 text-[10px] font-mono text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-500/40">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
@@ -120,7 +121,7 @@ export const McpStatusModal: React.FC<McpStatusModalProps> = ({ isOpen, onClose 
               Provides live, unadulterated Google Flights search tools (<code className="text-cyan-300">search_oneway_flights</code>, <code className="text-cyan-300">search_roundtrip_flights</code>).
             </div>
             <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1">
-              <span className="font-mono text-slate-500 truncate max-w-[280px]">{upstreamUrl}</span>
+              <span className="font-mono text-slate-500 truncate max-w-[280px]">{upstreamFlightPowersUrl}</span>
               <a
                 href="https://flights.flightpowers.com/"
                 target="_blank"
@@ -128,6 +129,35 @@ export const McpStatusModal: React.FC<McpStatusModalProps> = ({ isOpen, onClose 
                 className="text-cyan-400 hover:underline inline-flex items-center gap-1 text-[11px]"
               >
                 <span>Docs</span>
+                <ExternalLink className="w-3 h-3" />
+              </a>
+            </div>
+          </div>
+
+          {/* Upstream MCP Server 2: MoodTrip AI Hotel MCP */}
+          <div className="rounded-lg border border-slate-800 bg-slate-950/60 p-3.5 space-y-2.5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Building className="w-4 h-4 text-indigo-400" />
+                <span className="font-semibold text-white">Upstream 2: MoodTrip AI Hotel Search MCP</span>
+              </div>
+              <span className="inline-flex items-center gap-1 text-[10px] font-mono text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-500/40">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                Live Upstream
+              </span>
+            </div>
+            <div className="text-[11px] text-slate-400 leading-relaxed">
+              Provides AI natural language hotel search, room descriptions, reviews and direct booking links (<code className="text-indigo-300">search_hotels_by_description</code>, <code className="text-indigo-300">getHotelDetails</code>).
+            </div>
+            <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1">
+              <span className="font-mono text-slate-500 truncate max-w-[280px]">{upstreamMoodTripUrl}</span>
+              <a
+                href="https://moodtrip.ai"
+                target="_blank"
+                rel="noreferrer"
+                className="text-cyan-400 hover:underline inline-flex items-center gap-1 text-[11px]"
+              >
+                <span>Visit</span>
                 <ExternalLink className="w-3 h-3" />
               </a>
             </div>
