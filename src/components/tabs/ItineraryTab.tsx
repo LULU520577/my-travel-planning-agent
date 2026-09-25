@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTrip } from '../../context/TripContext';
 import { formatPrice } from '../../services/mcpClient';
 import { AddActivityModal } from '../modals/AddActivityModal';
@@ -22,7 +22,10 @@ import {
   ShieldCheck,
   CheckCircle2,
   AlertTriangle,
-  Baby
+  Baby,
+  Navigation,
+  Route,
+  Zap
 } from 'lucide-react';
 
 export const ItineraryTab: React.FC = () => {
@@ -41,6 +44,11 @@ export const ItineraryTab: React.FC = () => {
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isReplanning, setIsReplanning] = useState(false);
+
+  // ThinAir Telematics Geo MCP state
+  const [transitMode, setTransitMode] = useState<'transit' | 'walking' | 'driving'>('transit');
+  const [routeInfo, setRouteInfo] = useState<any>(null);
+  const [isLoadingRoute, setIsLoadingRoute] = useState(false);
 
   if (!selectedDestination || itineraryDays.length === 0) {
     return (
@@ -66,6 +74,39 @@ export const ItineraryTab: React.FC = () => {
   }
 
   const currentDay = itineraryDays[activeDayIndex] || itineraryDays[0];
+
+  useEffect(() => {
+    if (!currentDay || !currentDay.activities || currentDay.activities.length < 2) {
+      setRouteInfo(null);
+      return;
+    }
+
+    const waypoints = currentDay.activities.map((a) => a.location || a.title);
+    const token = localStorage.getItem('ventureflow_thinair_token') || undefined;
+
+    let isMounted = true;
+    setIsLoadingRoute(true);
+
+    fetch('/api/mcp/route', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ waypoints, transitMode, token })
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (isMounted && data.success) {
+          setRouteInfo(data.route);
+        }
+      })
+      .catch((e) => console.error('ThinAir route calculation error:', e))
+      .finally(() => {
+        if (isMounted) setIsLoadingRoute(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [currentDay?.dayNumber, currentDay?.activities, transitMode]);
 
   const handleRainToggle = async () => {
     setIsReplanning(true);
@@ -234,6 +275,46 @@ export const ItineraryTab: React.FC = () => {
             >
               Undo & Revert Day {currentDay.dayNumber}
             </button>
+          </div>
+        )}
+
+        {/* Geospatial Routing & ETA Summary Bar (ThinAir Telematics Geo MCP) */}
+        {routeInfo && (
+          <div className="bg-slate-900/90 border-b border-slate-800 px-6 py-2.5 flex flex-wrap items-center justify-between gap-3 text-xs shrink-0">
+            <div className="flex items-center gap-3 flex-wrap">
+              <div className="flex items-center gap-1.5 text-emerald-400 font-semibold font-mono">
+                <Navigation className="w-3.5 h-3.5" />
+                <span>ThinAir Geo ETA:</span>
+              </div>
+              <div className="flex items-center gap-2 text-slate-300 font-mono text-[11px]">
+                <span className="text-white font-bold">{routeInfo.totalDistanceKm} km</span>
+                <span className="text-slate-500">·</span>
+                <span className="text-cyan-300 font-bold">{routeInfo.totalDurationMinutes} mins travel</span>
+                <span className="text-slate-500">·</span>
+                <span className="text-slate-400">{routeInfo.steps?.length || 0} transfer legs</span>
+              </div>
+              <span className="inline-flex items-center gap-1 text-[10px] font-mono text-emerald-400 bg-emerald-950/70 px-2 py-0.5 rounded border border-emerald-500/30">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                Upstream: geo.thinair.co/mcp
+              </span>
+            </div>
+
+            {/* Transit Mode Selector */}
+            <div className="flex items-center gap-1 bg-slate-950 p-0.5 rounded border border-slate-800 text-[11px] font-mono">
+              {(['transit', 'walking', 'driving'] as const).map((mode) => (
+                <button
+                  key={mode}
+                  onClick={() => setTransitMode(mode)}
+                  className={`px-2 py-0.5 rounded capitalize transition-colors ${
+                    transitMode === mode
+                      ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-bold'
+                      : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  {mode}
+                </button>
+              ))}
+            </div>
           </div>
         )}
 

@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { DESTINATIONS_DATA, FLIGHTS_DATA, BASE_ITINERARIES, ACCOMMODATIONS_DATA, TRANSIT_PASSES_DATA, ATTRACTION_TICKETS_DATA } from '../data/travelKnowledge.ts';
 import { queryFlightPowersMcp } from '../services/flightpowersClient.ts';
 import { searchMoodTripHotels } from '../services/moodtripClient.ts';
+import { calculateDayRoute } from '../services/thinairClient.ts';
 import { CurrencyCode } from '../types/travel.ts';
 
 const CURRENCY_RATES: Record<CurrencyCode, number> = {
@@ -109,6 +110,26 @@ export const MCP_TOOLS_MANIFEST = [
       },
       required: ['city']
     }
+  },
+  {
+    name: 'calculate_transit_route',
+    description: 'Calculates multi-point travel route distances, transit ETA, and turn-by-turn waypoint coordinates powered by ThinAir Telematics Geo MCP (https://geo.thinair.co/mcp).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        waypoints: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'List of landmark or venue names in order (e.g. ["Arashiyama Bamboo Grove", "Kinkaku-ji", "Gion"])'
+        },
+        transitMode: {
+          type: 'string',
+          enum: ['transit', 'walking', 'driving'],
+          description: 'Mode of transit (default: transit)'
+        }
+      },
+      required: ['waypoints']
+    }
   }
 ];
 
@@ -119,7 +140,7 @@ export async function handleMcpGet(req: Request, res: Response) {
     serverInfo: {
       name: 'ventureflow-travel-agent-mcp',
       version: '1.0.0',
-      description: 'VentureFlow Travel Studio MCP Server with live FlightPowers Google Flights & MoodTrip Hotel Integrations',
+      description: 'VentureFlow Multi-Modal Travel Studio MCP Server with live FlightPowers, MoodTrip, and ThinAir Geo MCP Integrations',
       websiteUrl: 'https://my-travel-planning-agent.vercel.app'
     },
     transport: {
@@ -139,6 +160,12 @@ export async function handleMcpGet(req: Request, res: Response) {
         url: 'https://api.moodtrip.ai/api/mcp-http',
         status: 'connected',
         description: 'Real-time AI Hotel Search, room descriptions, reviews and booking links'
+      },
+      {
+        name: 'thinair-geo-mcp',
+        url: 'https://geo.thinair.co/mcp',
+        status: 'connected',
+        description: 'Mapbox telematics, geocoding, multi-point routing ETA and distance matrix'
       }
     ],
     tools: MCP_TOOLS_MANIFEST,
@@ -340,6 +367,23 @@ export async function handleMcpPost(req: Request, res: Response) {
                 upstream: 'https://api.moodtrip.ai/api/mcp-http',
                 hotels: result.hotels,
                 note: result.note
+              }, null, 2)
+            }]
+          });
+        }
+
+        if (toolName === 'calculate_transit_route') {
+          const { waypoints = [], transitMode = 'transit' } = args;
+          const route = await calculateDayRoute(waypoints, transitMode);
+
+          return sendResponse({
+            content: [{
+              type: 'text',
+              text: JSON.stringify({
+                waypoints,
+                transitMode,
+                upstream: 'https://geo.thinair.co/mcp',
+                route
               }, null, 2)
             }]
           });

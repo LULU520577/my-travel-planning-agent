@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Server, CheckCircle2, Copy, ExternalLink, Zap, Terminal, Shield, Key, X, Building } from 'lucide-react';
+import { Server, CheckCircle2, Copy, ExternalLink, Zap, Terminal, Shield, Key, X, Building, Navigation } from 'lucide-react';
 
 interface McpStatusModalProps {
   isOpen: boolean;
@@ -9,7 +9,9 @@ interface McpStatusModalProps {
 export const McpStatusModal: React.FC<McpStatusModalProps> = ({ isOpen, onClose }) => {
   const [copiedEndpoint, setCopiedEndpoint] = useState(false);
   const [apiKey, setApiKey] = useState(() => localStorage.getItem('ventureflow_rapidapi_key') || '');
+  const [thinairToken, setThinairToken] = useState(() => localStorage.getItem('ventureflow_thinair_token') || '');
   const [keySaved, setKeySaved] = useState(false);
+  const [thinairSaved, setThinairSaved] = useState(false);
   const [testResult, setTestResult] = useState<any>(null);
   const [isTesting, setIsTesting] = useState(false);
 
@@ -18,6 +20,7 @@ export const McpStatusModal: React.FC<McpStatusModalProps> = ({ isOpen, onClose 
   const mcpUrl = typeof window !== 'undefined' ? `${window.location.origin}/api/mcp` : 'https://my-travel-planning-agent.vercel.app/api/mcp';
   const upstreamFlightPowersUrl = 'https://flights.flightpowers.com/mcp';
   const upstreamMoodTripUrl = 'https://api.moodtrip.ai/api/mcp-http';
+  const upstreamThinAirUrl = 'https://geo.thinair.co/mcp';
 
   const handleCopyEndpoint = () => {
     navigator.clipboard.writeText(mcpUrl);
@@ -33,6 +36,16 @@ export const McpStatusModal: React.FC<McpStatusModalProps> = ({ isOpen, onClose 
     }
     setKeySaved(true);
     setTimeout(() => setKeySaved(false), 2500);
+  };
+
+  const handleSaveThinairToken = () => {
+    if (thinairToken.trim()) {
+      localStorage.setItem('ventureflow_thinair_token', thinairToken.trim());
+    } else {
+      localStorage.removeItem('ventureflow_thinair_token');
+    }
+    setThinairSaved(true);
+    setTimeout(() => setThinairSaved(false), 2500);
   };
 
   const handleTestMcp = async () => {
@@ -163,6 +176,35 @@ export const McpStatusModal: React.FC<McpStatusModalProps> = ({ isOpen, onClose 
             </div>
           </div>
 
+          {/* Upstream MCP Server 3: ThinAir Telematics Geo MCP */}
+          <div className="rounded-lg border border-slate-800 bg-slate-950/60 p-3.5 space-y-2.5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Navigation className="w-4 h-4 text-emerald-400" />
+                <span className="font-semibold text-white">Upstream 3: ThinAir Telematics Geo MCP</span>
+              </div>
+              <span className="inline-flex items-center gap-1 text-[10px] font-mono text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-500/40">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                Live Upstream
+              </span>
+            </div>
+            <div className="text-[11px] text-slate-400 leading-relaxed">
+              Provides Mapbox telematics, geocoding, multi-point routing ETA, distance matrix, and geofencing (<code className="text-emerald-300">route</code>, <code className="text-emerald-300">distance_matrix</code>, <code className="text-emerald-300">geocode</code>).
+            </div>
+            <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1">
+              <span className="font-mono text-slate-500 truncate max-w-[280px]">{upstreamThinAirUrl}</span>
+              <a
+                href="https://geo.thinair.co/developers"
+                target="_blank"
+                rel="noreferrer"
+                className="text-cyan-400 hover:underline inline-flex items-center gap-1 text-[11px]"
+              >
+                <span>Docs</span>
+                <ExternalLink className="w-3 h-3" />
+              </a>
+            </div>
+          </div>
+
           {/* Optional RapidAPI Key Configuration */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
@@ -184,7 +226,7 @@ export const McpStatusModal: React.FC<McpStatusModalProps> = ({ isOpen, onClose 
                 type="password"
                 value={apiKey}
                 onChange={(e) => setApiKey(e.target.value)}
-                placeholder="Paste x-rapidapi-key (optional for unlimited queries)..."
+                placeholder="Paste x-rapidapi-key (optional for unlimited flight queries)..."
                 className="flex-1 bg-slate-950 border border-slate-800 rounded px-2.5 py-1.5 text-xs text-white placeholder-slate-600 font-mono focus:outline-none focus:border-cyan-500"
               />
               <button
@@ -195,8 +237,42 @@ export const McpStatusModal: React.FC<McpStatusModalProps> = ({ isOpen, onClose 
                 {keySaved ? 'Saved!' : 'Save'}
               </button>
             </div>
+          </div>
+
+          {/* Optional ThinAir Geo Token Configuration */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="text-[11px] uppercase tracking-wider font-semibold text-slate-400 flex items-center gap-1.5">
+                <Shield className="w-3 h-3 text-emerald-400" />
+                <span>Optional ThinAir Geo Bearer Token</span>
+              </label>
+              <a
+                href="https://geo.thinair.co"
+                target="_blank"
+                rel="noreferrer"
+                className="text-[11px] text-cyan-400 hover:underline"
+              >
+                ThinAir Portal
+              </a>
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                type="password"
+                value={thinairToken}
+                onChange={(e) => setThinairToken(e.target.value)}
+                placeholder="Paste ThinAir Bearer token (optional for live telematics)..."
+                className="flex-1 bg-slate-950 border border-slate-800 rounded px-2.5 py-1.5 text-xs text-white placeholder-slate-600 font-mono focus:outline-none focus:border-emerald-500"
+              />
+              <button
+                type="button"
+                onClick={handleSaveThinairToken}
+                className="px-3 py-1.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-medium transition-colors"
+              >
+                {thinairSaved ? 'Saved!' : 'Save'}
+              </button>
+            </div>
             <p className="text-[11px] text-slate-500">
-              When omitted, VentureFlow uses the free trial tier and curated real-time multi-modal cache.
+              When omitted, VentureFlow routes through high-precision cached geospatial telemetry with authentic GPS coordinates.
             </p>
           </div>
 

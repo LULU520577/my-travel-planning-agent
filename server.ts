@@ -14,6 +14,7 @@ import {
 import { CurrencyCode, DestinationProposal, FlightOption, ItineraryDay, ActivityItem } from './src/types/travel.ts';
 import { handleMcpGet, handleMcpPost } from './src/server/mcpEndpoint.ts';
 import { searchMoodTripHotels } from './src/services/moodtripClient.ts';
+import { calculateDayRoute } from './src/services/thinairClient.ts';
 
 dotenv.config();
 
@@ -395,6 +396,24 @@ app.get('/api/mcp/hotels', async (req, res) => {
       hotels: result.hotels,
       upstream: 'https://api.moodtrip.ai/api/mcp-http',
       mcpService: 'MoodTrip AI Hotel MCP'
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 6c. Geospatial Routing & ETA via ThinAir Telematics Geo MCP (https://geo.thinair.co/mcp)
+app.post('/api/mcp/route', async (req, res) => {
+  try {
+    const { waypoints = [], transitMode = 'transit', token } = req.body;
+    const route = await calculateDayRoute(waypoints, transitMode, token);
+    res.json({
+      success: true,
+      waypoints,
+      transitMode,
+      route,
+      upstream: 'https://geo.thinair.co/mcp',
+      mcpService: 'ThinAir Telematics Geo MCP'
     });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
