@@ -11,10 +11,16 @@ import {
   FileCheck, 
   RotateCcw,
   Sparkles,
-  Server
+  Server,
+  Bot
 } from 'lucide-react';
 
-export const TopHeader: React.FC = () => {
+interface TopHeaderProps {
+  onToggleAskPanel?: () => void;
+  isAskPanelOpen?: boolean;
+}
+
+export const TopHeader: React.FC<TopHeaderProps> = ({ onToggleAskPanel, isAskPanelOpen }) => {
   const { 
     activeTab, 
     setActiveTab, 
@@ -86,10 +92,29 @@ export const TopHeader: React.FC = () => {
 
       {/* Zone 3: Financial status readout & action controls */}
       <div className="flex items-center gap-3">
+        {/* Ask Agent Panel Button */}
+        {onToggleAskPanel && (
+          <button
+            onClick={onToggleAskPanel}
+            title="Ask Agent (Gemini 3.8 Flash via MCP Servers)"
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-semibold transition-all border shadow-xs ${
+              isAskPanelOpen
+                ? 'bg-indigo-600 text-white border-indigo-400 ring-1 ring-indigo-400/40'
+                : 'bg-indigo-950/70 hover:bg-indigo-900/80 text-indigo-300 border-indigo-700/60'
+            }`}
+          >
+            <Bot className="w-3.5 h-3.5 text-indigo-400" />
+            <span>Ask Agent</span>
+            <span className="hidden xl:inline text-[10px] font-mono px-1 py-0.2 rounded bg-indigo-900/60 text-indigo-300">
+              POST /api/ask
+            </span>
+          </button>
+        )}
+
         {/* MCP Live Status Pill */}
         <button
           onClick={() => setIsMcpModalOpen(true)}
-          title="Open Model Context Protocol Hub (VentureFlow + FlightPowers)"
+          title="Open Model Context Protocol Hub (VentureFlow + FlightPowers + MoodTrip + ThinAir)"
           className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 text-[11px] font-mono text-cyan-300 transition-colors shadow-sm"
         >
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />

@@ -15,6 +15,7 @@ import { CurrencyCode, DestinationProposal, FlightOption, ItineraryDay, Activity
 import { handleMcpGet, handleMcpPost } from './src/server/mcpEndpoint.ts';
 import { searchMoodTripHotels } from './src/services/moodtripClient.ts';
 import { calculateDayRoute } from './src/services/thinairClient.ts';
+import askHandler from './api/ask.js';
 
 dotenv.config();
 
@@ -419,6 +420,9 @@ app.post('/api/mcp/route', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+
+// 6d. AI Agent Endpoint powered by Gemini + MCP Servers (POST /api/ask)
+app.post('/api/ask', askHandler);
 
 // 7. Simulated Booking Confirmation Action
 app.post('/api/mcp/book', async (req, res) => {
